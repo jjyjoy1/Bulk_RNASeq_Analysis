@@ -1,0 +1,159 @@
+Below is an overview of popular Python libraries for each step.
+
+1. Data Handling and Preprocessing
+pandas & numpy:
+These libraries are fundamental for data handling and numerical operations.
+import pandas as pd
+import numpy as np
+
+# Example: Reading in a counts matrix and sample metadata
+counts = pd.read_csv("counts_matrix.csv", index_col=0)
+metadata = pd.read_csv("sample_metadata.csv", index_col=0)
+Quality Control & Normalization:
+For single-cell RNA-seq, packages like Scanpy offer a full suite of QC and normalization functions (even though it’s designed primarily for single-cell data, many functions are adaptable for bulk data).
+Alternatively, we might write custom scripts using pandas/numpy.
+
+2. Differential Expression Analysis
+pyDESeq2:
+A Python implementation (or wrapper) of the DESeq2 workflow, designed for bulk RNA-seq analysis.
+# Install via pip if needed:
+# pip install pyDESeq2
+
+from pydeseq2.dds import DeseqDataSet
+from pydeseq2.de import DeseqStats
+
+# Assuming 'counts' is a DataFrame with genes as rows and samples as columns,
+# and 'metadata' contains at least a 'condition' column.
+dds = DeseqDataSet(counts=counts, clinical=metadata, design_factors="condition")
+dds.deseq2()  # Runs normalization and dispersion estimation
+
+# Perform differential expression analysis
+stats = DeseqStats(dds, n_cpus=4)
+stats.summary()  # View a summary of results
+top_degs = stats.results.sort_values("padj").head(50)  # Get top 50 DEGs
+
+diffxpy:
+Particularly useful for single-cell RNA-seq differential expression, it integrates with Scanpy and can handle complex experimental designs.
+# Example usage (for single-cell data):
+# pip install diffxpy
+import diffxpy.api as de
+# Assuming you have an AnnData object named 'adata'
+results = de.test.wald(data=adata, formula_loc="~ condition", factor_loc_totest="condition")
+rpy2:
+If you want to leverage R-based packages (like DESeq2 or edgeR) directly from Python, you can use the rpy2 interface.
+
+3. Feature Selection
+scikit-learn:
+This library offers various feature selection methods such as:
+VarianceThreshold: Removes features with low variance.
+SelectKBest: Selects features based on univariate statistical tests.
+LassoCV: Useful for regression-based feature selection.
+from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif
+
+# Variance thresholding: remove genes with very low variance across samples
+selector = VarianceThreshold(threshold=1.0)  # Adjust threshold as needed
+selected_data = selector.fit_transform(counts.T)  # Transpose if genes are rows
+
+# Alternatively, using univariate feature selection (e.g., ANOVA F-test)
+selector = SelectKBest(score_func=f_classif, k=50)  # Select top 50 features
+selected_features = selector.fit_transform(counts.T, metadata['condition'])
+
+4. Dimensionality Reduction and Visualization
+PCA:
+Use scikit-learn’s PCA for a linear reduction.
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Assuming 'normalized_data' is your normalized expression matrix (samples as rows)
+pca = PCA(n_components=2)
+pca_result = pca.fit_transform(normalized_data)
+
+plt.figure(figsize=(8,6))
+sns.scatterplot(x=pca_result[:, 0], y=pca_result[:, 1], hue=metadata['condition'])
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+plt.title("PCA of RNA-Seq Samples")
+plt.show()
+
+t-SNE and UMAP:
+These nonlinear methods are excellent for capturing complex relationships.
+t-SNE: Available in scikit-learn.
+from sklearn.manifold import TSNE
+
+tsne = TSNE(n_components=2, perplexity=30, random_state=42)
+tsne_result = tsne.fit_transform(normalized_data)
+
+plt.figure(figsize=(8,6))
+sns.scatterplot(x=tsne_result[:, 0], y=tsne_result[:, 1], hue=metadata['condition'])
+plt.xlabel("t-SNE 1")
+plt.ylabel("t-SNE 2")
+plt.title("t-SNE of RNA-Seq Samples")
+plt.show()
+
+UMAP: Use the umap-learn package.
+# Install via pip if needed: pip install umap-learn
+import umap
+
+reducer = umap.UMAP(n_components=2, random_state=42)
+umap_result = reducer.fit_transform(normalized_data)
+
+plt.figure(figsize=(8,6))
+sns.scatterplot(x=umap_result[:, 0], y=umap_result[:, 1], hue=metadata['condition'])
+plt.xlabel("UMAP 1")
+plt.ylabel("UMAP 2")
+plt.title("UMAP of RNA-Seq Samples")
+plt.show()
+
+Heatmaps and Clustering:
+For visualizing gene expression patterns, you can use:
+seaborn's clustermap:
+sns.clustermap(normalized_data[selected_genes],
+               method="average",
+               metric="euclidean",
+               z_score=0,  # standardize rows (genes)
+               cmap="vlag",
+               figsize=(10, 8),
+               col_colors=metadata['condition'].map({"control": "blue", "treated": "red"}))
+plt.show()
+
+5. Integrated Frameworks
+Scanpy:
+Though primarily designed for single-cell RNA-seq analysis, Scanpy provides many integrated functions for preprocessing, normalization, differential expression testing, dimensionality reduction, and visualization. It uses the AnnData structure to store expression data and metadata together.
+# pip install scanpy
+import scanpy as sc
+
+# Read data (e.g., from an h5ad file or convert your pandas DataFrame)
+adata = sc.read_csv("counts_matrix.csv")
+adata.obs = metadata  # Attach sample metadata
+
+# Preprocessing: filtering and normalization
+sc.pp.filter_genes(adata, min_cells=3)
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+
+# PCA
+sc.tl.pca(adata, svd_solver='arpack')
+sc.pl.pca(adata, color='condition')
+
+# Clustering (e.g., Leiden clustering) and visualization (UMAP)
+sc.pp.neighbors(adata)
+sc.tl.umap(adata)
+sc.pl.umap(adata, color='condition')
+
+# Differential expression (using rank_genes_groups)
+sc.tl.rank_genes_groups(adata, 'condition', method='wilcoxon')
+sc.pl.rank_genes_groups(adata, n_genes=25, sharey=False)
+Summary
+Data Processing: Use pandas and numpy for data management.
+DEA:
+Bulk RNA-Seq: Use pyDESeq2.
+Single-cell RNA-Seq: Use Scanpy and diffxpy.
+Feature Selection: Use methods available in scikit-learn.
+Dimension Reduction: Utilize scikit-learn (PCA, t-SNE) and umap-learn.
+Visualization & Clustering: Use matplotlib, seaborn, and scipy.
+Integrated Analysis (optional): Scanpy offers a one-stop solution especially for single-cell data.
+
+These packages can be combined into a coherent workflow similar to the roadmap provided for R-based tools. We may also use rpy2 to call R functions if needed, which makes it easier to leverage well-established R packages within a Python environment.
+
+

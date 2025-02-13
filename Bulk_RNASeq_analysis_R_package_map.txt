@@ -1,0 +1,148 @@
+Roadmap for performing bulk RNA differential expression analysis (DEA) with feature selection and dimension reduction. 
+Although few lab do bulk RNAseq data analysis, most of lab prefer to do single cell sequencing analysis
+
+This plan covers the full pipeline from raw count data through statistical analysis, selection of top features, and visualization of sample relationships. 
+In future the pipeline can adapt and expand these steps depending on the real experiment design, data format, biomedical hypotheses, and available computing environment.
+
+This part code based on R packages
+
+1. Understand and Prepare Your Data
+Experimental Design:
+Clarify the conditions/groups and ensure you have enough biological replicates.
+Note any batch effects or confounding variables that might need to be modeled.
+Data Format:
+Ensure you have raw counts (for RNA-Seq) or normalized expression values (for microarray) and accompanying metadata (sample conditions, batch info, etc.).
+
+2. Quality Control (QC) and Preprocessing
+QC of Raw Data:
+Check raw data quality using tools like FastQC (if starting from raw sequencing reads).
+Evaluate mapping rates, gene coverage, and other quality metrics.
+Filtering:
+Remove low-quality samples (outliers) and filter out lowly expressed genes that are unlikely to be informative.
+Normalization:
+
+RNA-Seq: Use normalization methods such as TMM (edgeR), median-of-ratios (DESeq2), or upper quartile normalization.
+Microarrays: Apply robust multi-array average (RMA) or similar normalization procedures.
+
+Example in DESeq2 (R):
+library(DESeq2)
+dds <- DESeqDataSetFromMatrix(countData = counts,
+                              colData = coldata,
+                              design = ~ condition)
+# Filter lowly expressed genes:
+keep <- rowSums(counts(dds) >= 10) >= 3  # adjust thresholds as needed
+dds <- dds[keep, ]
+# Run normalization and preprocessing
+dds <- DESeq(dds)
+
+3. Differential Expression Analysis (DEA)
+Statistical Modeling:
+Use specialized packages such as DESeq2, edgeR, or limma (if using voom for RNA-Seq data).
+Build a model that represents your experimental design. Include covariates (e.g., batch) if necessary.
+Testing for Differential Expression:
+Run the DEA pipeline to obtain statistics (log fold changes, p-values, adjusted p-values/FDR).
+Set thresholds (e.g., FDR < 0.05 and |log₂FC| > threshold) to define “top” differentially expressed genes.
+Example in DESeq2:
+res <- results(dds)
+# Order by adjusted p-value
+resOrdered <- res[order(res$padj), ]
+# Get top differentially expressed genes (DEGs)
+topDEGs <- head(resOrdered, n = 50)  # e.g., top 50 DEGs
+summary(res)
+
+4. Feature Selection
+Choosing Top Features:
+Use the results from DEA to select a subset of genes that show the most statistically significant and/or highest fold changes.
+This set serves as your “feature” list for subsequent analyses.
+Alternative Feature Selection Approaches:
+Statistical Filters: Use variance filters or other univariate methods.
+Machine Learning Methods: Techniques like LASSO regression, Random Forest feature importance, or recursive feature elimination can further refine the gene set if you’re building predictive models.
+Biological Relevance:
+Consider integrating prior knowledge (e.g., known pathway membership) to focus on genes of biological interest.
+
+5. Dimension Reduction
+Purpose:
+Reduce the complexity of your dataset to visualize sample relationships and check for underlying patterns (e.g., clusters corresponding to conditions, batch effects, etc.).
+Methods:
+Principal Component Analysis (PCA):
+A linear method that projects data into components capturing the largest variance.
+Quick to compute and useful for detecting outliers and batch effects.
+t-SNE or UMAP:
+Nonlinear methods that can capture more complex relationships.
+Useful for visualization when clusters are non-linearly separable.
+Example: PCA in DESeq2 (R):
+rld <- rlog(dds, blind = FALSE)  # Regularized log transformation
+plotPCA(rld, intgroup = "condition")
+Example: t-SNE in R:
+library(Rtsne)
+# Assuming rldData is your transformed expression matrix
+tsne_out <- Rtsne(t(assay(rld)), perplexity = 30)
+plot(tsne_out$Y, col = as.factor(coldata$condition), pch = 19,
+     main = "t-SNE Plot of RNA-Seq Data")
+Interpretation:
+Check whether samples from different conditions form distinct clusters.
+Use these visualizations to further confirm the separation suggested by DEA.
+
+6. Clustering and Visualization
+Heatmaps:
+Generate heatmaps of the expression of top DEGs to visualize sample clustering.
+Tools: pheatmap, ComplexHeatmap in R.
+Example:
+library(pheatmap)
+# Select normalized counts for top DEGs
+topGenes <- rownames(topDEGs)
+heatmapData <- assay(rld)[topGenes, ]
+pheatmap(heatmapData, scale = "row", annotation_col = coldata)
+Hierarchical Clustering:
+Perform hierarchical clustering on the expression matrix to see natural groupings.
+Validate clusters against experimental conditions.
+
+7. Functional Annotation and Pathway Analysis
+Gene Ontology (GO) and Pathway Enrichment:
+Use tools like clusterProfiler, DAVID, Enrichr, or g:Profiler to determine if the top DEGs are enriched in specific pathways or biological processes.
+Example using clusterProfiler in R:
+library(clusterProfiler)
+library(org.Hs.eg.db)  # Change according to your organism
+geneList <- rownames(topDEGs)
+ego <- enrichGO(gene = geneList, 
+                OrgDb = org.Hs.eg.db, 
+                keyType = "SYMBOL", 
+                ont = "BP", 
+                pAdjustMethod = "BH", 
+                qvalueCutoff = 0.05)
+dotplot(ego)
+
+8. Validation and Reporting
+Cross-validation:
+If developing predictive models (e.g., classifying conditions), use cross-validation to assess performance.
+Consider external validation datasets if available.
+Biological Validation:
+Validate key findings using independent experimental methods (e.g., qRT-PCR).
+Documentation:
+Record every step, parameter choice, and rationale.
+Prepare figures (PCA plots, heatmaps, volcano plots) and tables for publication or reports.
+
+Summary Roadmap
+Data Understanding & QC:
+Define design, run QC, filter low-quality data/genes.
+Normalization & Preprocessing:
+Normalize data (DESeq2/edgeR), filter low counts.
+Differential Expression Analysis:
+Use DEA tools (DESeq2, edgeR, limma) to compute differential expression.
+Identify top DEGs based on statistical significance and fold change.
+Feature Selection:
+Select top DEGs as features.
+Optionally refine using additional machine learning-based feature selection.
+Dimension Reduction:
+Apply PCA (and optionally t-SNE/UMAP) for visualization.
+Explore sample clustering and potential batch effects.
+Clustering & Visualization:
+Create heatmaps and perform hierarchical clustering.
+Validate that clustering corresponds with experimental conditions.
+Functional Analysis:
+Run GO/pathway enrichment analyses on top DEGs.
+Validation & Reporting:
+Validate findings with additional experiments or external datasets.
+Document, visualize, and report your workflow and results.
+
+

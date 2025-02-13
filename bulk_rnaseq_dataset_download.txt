@@ -1,0 +1,57 @@
+1. Accessing Bulk RNA-seq Datasets
+
+Gene Expression Omnibus (GEO): GEO is a widely used repository for high-throughput gene expression data. You can search for bulk RNA-seq datasets by using filters like "rnaseq counts" or specific accession numbers (e.g., GSE106305). 
+
+#https://github.com/erilu/bulk-rnaseq-analysis
+#https://ncbiinsights.ncbi.nlm.nih.gov/2023/04/19/human-rna-seq-geo/
+
+NCBI SRA Toolkit: To download raw sequencing data (e.g., FASTQ files) from GEO, you can use the SRA Toolkit. This tool allows you to fetch Sequence Read Archive (SRA) files and convert them into FASTQ format for analysis 13.
+GEO2R Tool: GEO2R is integrated with GEO and allows you to perform differential expression analysis directly on the website. It provides interactive visualizations like volcano plots and boxplots to explore differentially expressed genes.
+
+
+2. Tools for Differential Expression Analysis
+
+DESeq2: A popular R package for differential expression analysis. It uses negative binomial generalized linear models to identify differentially expressed genes. DESeq2 can be used with count matrices generated from tools like Salmon or STAR 1316.
+
+PyDESeq2: A Python implementation of DESeq2, offering similar functionality with improved integration into Python-based workflows. It is particularly useful for large datasets and provides faster processing times.
+
+limma and kimma: These R packages are used for linear modeling and mixed-effects analysis, respectively. They are suitable for more complex experimental designs 5.
+GEN Tools: The National Genomics Data Center provides online tools for bulk RNA-seq analysis, including differential expression, functional enrichment, and gene regulatory network inference.
+
+#https://erilu.github.io/bulk-rnaseq-analysis/
+#https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
+
+3. Steps for Differential Expression Analysis
+
+Data Preparation:
+Download raw data (e.g., FASTQ files) from repositories like GEO or SRA.
+Align reads to a reference genome using tools like STAR or HISAT2.
+Generate count matrices using tools like featureCounts or Salmon.
+
+Analysis:
+Use DESeq2 or PyDESeq2 to perform differential expression analysis. These tools require a count matrix and a design matrix specifying experimental conditions.
+
+Visualize results using tools like GEO2R or custom R/Python scripts for volcano plots, heatmaps, and PCA.
+Interpretation:
+Identify significantly differentially expressed genes based on adjusted p-values and fold changes.
+Perform functional enrichment analysis to understand the biological relevance of the results.
+
+#https://bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html
+#https://pubmed.ncbi.nlm.nih.gov/37669147/
+#https://cbirt.net/streamlining-differential-expression-analysis-on-bulk-rna-seq-data-with-pydeseq2/
+
+4. Example Workflow
+
+Dataset: Use the dataset from Guo et al. (GSE106305) as an example. This dataset includes RNA-seq data from LNCaP and PC3 cell lines under normoxia and hypoxia conditions 13.
+Tools:
+Download SRA files using the SRA Toolkit.
+Align reads with STAR and generate count matrices.
+Perform differential expression analysis using DESeq2 or PyDESeq2.
+Visualize results with volcano plots and heatmaps 110.
+5. Resources for Learning
+
+Bioconductor Workflows: Detailed tutorials on RNA-seq analysis, including differential expression, are available on Bioconductor 1316.
+GitHub Repositories: Repositories like Erick Lu's bulk RNA-seq analysis provide code and step-by-step guides for processing and analyzing RNA-seq data 13.
+Online Tools: Platforms like GEN and GEO2R offer user-friendly interfaces for analysis and visualization 1115.
+
+
