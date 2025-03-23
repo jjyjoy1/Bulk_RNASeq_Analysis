@@ -7,6 +7,7 @@ Below is a detailed explanation of each method and their main differences.
 DESeq2
 Statistical Model:
 DESeq2 models RNA-seq counts using a negative binomial (NB) distribution. In this model, each gene count is assumed to be NB-distributed with a mean that depends on the experimental condition and a dispersion parameter that captures extra-Poisson variability (i.e., biological variation).
+
 Normalization:
 It uses the median-of-ratios method to normalize counts, which corrects for differences in sequencing depth and RNA composition.
 
