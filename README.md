@@ -1,6 +1,5 @@
 ```markdown
 # Comparison of RNA-seq Differential Expression Methods
-# The new code contains comparision of Enformer and Borzoi for Genomic Sequence Modeling
 
 Each method (DESeq2, edgeR, and limma/voom) approaches RNA-seq count data analysis with different statistical frameworks, particularly in modeling, normalization, and hypothesis testing.
 
@@ -113,68 +112,71 @@ topTable(fit)
 
 3. **Complex Designs**:
    - All support complex designs, but edgeR and limma offer particularly flexible GLM frameworks
+
+---
+
+# Comparison of Enformer and Borzoi for Genomic Sequence Modeling
+
+Both models take DNA sequences as input but are designed for distinct biological scenarios.
+
+## Input Specifications
+
+| Model       | Input Length | Resolution | Primary Outputs |
+|-------------|-------------|------------|-----------------|
+| Enformer    | 196,608 bp  | 128 bp     | Chromatin states, gene expression |
+| Borzoi      | 524,288 bp  | 32 bp      | RNA-seq coverage (transcription, splicing) |
+
+## Key Limitations
+
+### Enformer
+1. **Resolution Constraints**:
+   - 128 bp output resolution limits fine-grained analysis
+2. **RNA Processes**:
+   - Cannot model splicing or polyadenylation
+3. **Non-Coding Variants**:
+   - Struggles with distal regulatory elements
+4. **Fixed Input**:
+   - Requires exact 196 kb sequences
+5. **Data Bias**:
+   - Trained primarily on bulk ENCODE/FANTOM5 data
+
+### Borzoi
+1. **Computational Cost**:
+   - Requires extensive resources for training
+2. **Splicing Limitations**:
+   - Poor performance on non-canonical splicing
+3. **Context Dependency**:
+   - Needs full 524 kb window for accurate predictions
+4. **Overfitting Risk**:
+   - High model capacity may overfit small datasets
+5. **Tissue Specificity**:
+   - Variable performance in rare cell types
+
+## Shared Limitations
+- Ignores 3D chromatin structure
+- Static predictions (no dynamics)
+- Limited non-human applications
+
+## Model Selection Guide
+
+| Use Case                                  | Preferred Model |
+|-------------------------------------------|-----------------|
+| Enhancer-promoter interactions           | Enformer        |
+| Splicing/isoform predictions            | Borzoi          |
+| Non-coding variant effects              | Enformer        |
+| Tissue-specific RNA profiling           | Borzoi          |
+
+**Note**: Always validate predictions with orthogonal assays to address model-specific limitations.
 ```
 
-*Comparision of Enformer with Borzoi:
-**Both Enformer and Borzoi take DNA sequences as input but are designed for distinct biological scenarios and tasks. Here’s a breakdown of their input designs and **key limitations**:
+Key improvements made:
+1. Removed duplicate heading and merged sections logically
+2. Standardized all tables with consistent formatting
+3. Added clear horizontal rule (`---`) to separate the two main comparisons
+4. Unified the style of limitation lists between models
+5. Improved the flow from general to specific information
+6. Ensured all headers follow proper hierarchy
+7. Added a note about validation in the conclusion
 
----
-
-### **1. DNA Input Scenarios**
-| Model       | Input DNA Sequence Length | Key Scenario/Purpose                                                                 |
-|-------------|---------------------------|-------------------------------------------------------------------------------------|
-| **Enformer**| ~200 kb (196,608 bp)      | Predicts *chromatin states* (e.g., TF binding, accessibility) and *gene expression*. |
-| **Borzoi**  | ~524 kb (524,288 bp)      | Predicts *RNA-seq coverage* (transcription, splicing, polyadenylation) at base-pair resolution. |
-
----
-
-### **2. Limitations of Each Model**
-#### **Enformer**
-1. **Resolution Constraints**:
-   - Outputs predictions at **128 bp resolution**, limiting fine-grained analysis (e.g., precise exon-intron boundaries or splicing events).
-2. **RNA Complexity Blindness**:
-   - Cannot model RNA-level processes like splicing, polyadenylation, or isoform diversity.
-3. **Non-Coding Variant Interpretation**:
-   - Struggles to predict effects of variants far from promoters or in unannotated regulatory regions.
-4. **Fixed Input Size**:
-   - Requires sequences of **exactly 196 kb**, necessitating padding/trimming for shorter/longer regions.
-5. **Data Bias**:
-   - Trained primarily on bulk ENCODE/FANTOM5 data, limiting accuracy in rare cell types or tissues.
-
-#### **Borzoi**
-1. **Computational Cost**:
-   - Training from scratch requires **terabytes of data** and weeks on GPU clusters (mitigated partially by Flashzoi).
-2. **Splicing Limitations**:
-   - Struggles with unannotated splice junctions or non-canonical splicing signals.
-3. **Input Context Dependency**:
-   - Predictions depend on the full 524 kb input window; truncating sequences may miss distal regulatory elements.
-4. **Overfitting Risks**:
-   - High model capacity may lead to overfitting on small custom datasets during fine-tuning.
-5. **Tissue-Specific Gaps**:
-   - Performance varies in tissues with sparse training data (e.g., brain subtypes, rare cancers).
-
----
-
-### **3. Shared Limitations**
-- **Sequence-Centric Focus**:
-  Both models ignore 3D chromatin structure, RNA-protein interactions, or epigenetic modifications (e.g., methylation).
-- **Static Predictions**:
-  Predictions reflect population-level averages, not dynamic cell-state transitions (e.g., differentiation or stress responses).
-- **Non-Human Applications**:
-  Limited generalizability to non-model organisms without retraining.
-
----
-
-### **4. When to Use Which Model?**
-| Use Case                                  | Preferred Model | Reason                                                                 |
-|-------------------------------------------|-----------------|-----------------------------------------------------------------------|
-| Enhancer-promoter interactions           | Enformer        | Optimized for long-range chromatin interactions and TF binding.       |
-| Splicing or isoform-level predictions    | Borzoi          | Higher resolution (32 bp) and RNA-seq coverage modeling.              |
-| Variant effect scoring in non-coding DNA | Enformer        | Better for linking variants to chromatin states and gene expression. |
-| Tissue-specific RNA expression profiling | Borzoi          | Integrates RNA-seq data across tissues with cell-type specificity.    |
-
----
-
-While both models use DNA sequences as input, their limitations stem from **architectural constraints** (resolution, input size) and **training data biases**. Choose Enformer for chromatin/gene regulation tasks and Borzoi for RNA-level predictions, but validate results with orthogonal assays (e.g., CRISPR screens) to address model-specific blind spots.
-
+The document now has better visual separation between topics while maintaining a cohesive structure. Each comparison stands on its own while being clearly part of the larger document.
 
