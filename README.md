@@ -1,73 +1,180 @@
-Each of these popular methods DESeq2, edgeR, and limma/voom approaches the analysis of RNA-seq count data with a slightly different statistical framework, particularly in how they model the count distribution, estimate variance (or dispersion), normalize data, and perform hypothesis testing. 
+```markdown
+# Comparison of RNA-seq Differential Expression Methods
+# The new code contains comparision of Enformer and Borzoi for Genomic Sequence Modeling
 
-Below is a detailed explanation of each method and their main differences.
+Each method (DESeq2, edgeR, and limma/voom) approaches RNA-seq count data analysis with different statistical frameworks, particularly in modeling, normalization, and hypothesis testing.
 
-1. Modeling Count Data
+## Statistical Models Overview
 
-DESeq2
-Statistical Model:
-DESeq2 models RNA-seq counts using a negative binomial (NB) distribution. In this model, each gene count is assumed to be NB-distributed with a mean that depends on the experimental condition and a dispersion parameter that captures extra-Poisson variability (i.e., biological variation).
+### DESeq2
+**Statistical Model**:
+- Uses negative binomial (NB) distribution
+- Models gene counts with condition-dependent means and dispersion parameters
 
-Normalization:
-It uses the median-of-ratios method to normalize counts, which corrects for differences in sequencing depth and RNA composition.
+**Key Features**:
+- **Normalization**: Median-of-ratios method
+- **Dispersion Estimation**:
+  - Gene-wise dispersions
+  - Empirical Bayes shrinkage for stabilization
+- **Testing**:
+  - Wald test (or LRT for complex designs)
+  - Log₂ fold change shrinkage
 
-Dispersion Estimation:
-DESeq2 estimates gene-wise dispersions and then uses empirical Bayes shrinkage to "borrow strength" across all genes. This shrinkage stabilizes the dispersion estimates, especially when sample sizes are small.
-Testing and Shrinkage:
-Differential expression is typically assessed with a Wald test (or a likelihood ratio test for more complex designs). Additionally, DESeq2 applies shrinkage to the log₂ fold changes, reducing the impact of low-count variability and providing more reliable effect size estimates.
+### edgeR
+**Statistical Model**:
+- Negative binomial distribution
+- Flexible dispersion estimation options
 
-edgeR
-Statistical Model:
-Like DESeq2, edgeR assumes that counts follow a negative binomial distribution. However, edgeR provides several ways to estimate dispersion:
-Common Dispersion: A single dispersion value shared across all genes.
-Trended Dispersion: A trend of dispersion values as a function of the genes mean expression.
-Tagwise (Gene-specific) Dispersion: Individual dispersion estimates for each gene.
-Normalization:
-edgeR uses the TMM (Trimmed Mean of M-values) normalization method to adjust for differences in library sizes and composition biases.
-Dispersion Estimation and Testing:
-EdgeR employs empirical Bayes methods to moderate the dispersion estimates. For testing, it offers:
-Exact Tests: For simple two-group comparisons (analogous to a Fishers exact test adapted for NB data).
-Generalized Linear Models (GLMs): For more complex experimental designs, using either likelihood ratio tests or quasi-likelihood F-tests, which account for variability more robustly.
+**Key Features**:
+- **Normalization**: TMM (Trimmed Mean of M-values)
+- **Dispersion Options**:
+  - Common (shared across genes)
+  - Trended (function of mean expression)
+  - Tagwise (gene-specific)
+- **Testing**:
+  - Exact tests (two-group comparisons)
+  - GLM-based tests (complex designs)
+  - Quasi-likelihood F-tests
 
-limma with voom
-Original Framework (limma):
-Originally developed for microarray data, limma uses linear models along with empirical Bayes moderation to improve variance estimates across genes.
-The voom Transformation:
-RNA-seq count data are inherently heteroscedastic (i.e., variance depends on the mean). The voom method addresses this by:
-Transforming Counts: Converting raw counts into log counts per million (log CPM) values.
-Estimating the Mean-Variance Relationship: It models how the variance changes with the mean expression level.
-Assigning Weights: Each observation is given a precision weight based on its estimated variance. This weighting makes the data amenable to standard linear modeling.
-Testing:
-After the voom transformation, limma applies linear modeling and computes moderated t-statistics (using empirical Bayes shrinkage), which helps stabilize variance estimates, especially in studies with small sample sizes.
+### limma/voom
+**Original Framework**:
+- Developed for microarrays
+- Linear models with empirical Bayes moderation
 
-2. Key Differences and Considerations
+**voom Transformation**:
+1. Converts counts to logCPM
+2. Models mean-variance relationship
+3. Assigns precision weights
 
-Distributional Assumptions:
-DESeq2 & edgeR:
-Both explicitly model the count data using the negative binomial distribution. This is well suited for RNA-seq counts, particularly when the counts are low or when there is overdispersion relative to the Poisson model.
-limma/voom:
-Instead of modeling the counts directly, voom transforms the data so that the variability across genes becomes approximately constant (homoscedastic) on the log scale, thereby allowing the use of linear models.
+**Testing**:
+- Moderated t-tests
+- Empirical Bayes variance shrinkage
 
-Normalization Approaches:
-DESeq2: Uses median-of-ratios.
-edgeR: Uses TMM normalization.
-limma/voom: Often uses TMM (or other similar methods) before applying the voom transformation to log CPM.
+## Key Differences
 
-Dispersion/Variance Estimation:
-DESeq2: Estimates gene-wise dispersions and shrinks these estimates using an empirical Bayes approach.
-edgeR: Offers flexibility by providing common, trended, and tagwise dispersion estimates, and then uses empirical Bayes to stabilize these estimates.
-limma/voom: Instead of directly estimating dispersion for count data, voom estimates the mean-variance trend and then assigns weights to each observation for use in linear models.
+| Feature               | DESeq2               | edgeR                | limma/voom           |
+|-----------------------|----------------------|----------------------|----------------------|
+| **Distribution**      | Negative Binomial    | Negative Binomial    | Linear Models       |
+| **Normalization**     | Median-of-ratios     | TMM                  | TMM + voom          |
+| **Dispersion**        | Gene-wise + shrinkage| Multiple options     | Mean-variance trend  |
+| **Testing**           | Wald/LRT             | Exact/GLM tests      | Moderated t-tests   |
+| **Best For**          | Small samples        | Flexible designs     | Large samples       |
 
-Testing Procedures:
-DESeq2:
-Uses the Wald test (or likelihood ratio tests) on the NB model parameters. It also shrinks log fold changes to improve interpretability, especially for low-count genes.
-edgeR:
-Uses exact tests for simple comparisons and GLM-based tests (likelihood ratio or quasi-likelihood tests) for complex designs.
-limma/voom:
-After transforming the data, it uses moderated t-tests in a linear modeling framework, which benefits from the empirical Bayes shrinkage of variance estimates.
+## When to Use Each Method
 
-When to Use Which:
-DESeq2 and edgeR are often preferred for RNA-seq data, especially when dealing with low counts or small sample sizes, because their NB modeling is directly suited to count data.
-limma/voom is particularly effective when you have a larger sample size or when you prefer the linear modeling framework. The voom transformation makes it possible to apply the powerful and flexible methods from limma, especially in complex experimental designs.
+### DESeq2
+- Preferred for:
+  - Small sample sizes
+  - Experiments with low counts
+  - When fold change shrinkage is beneficial
+
+### edgeR
+- Preferred for:
+  - Flexible experimental designs
+  - When different dispersion estimation methods are needed
+  - Exact tests for simple comparisons
+
+### limma/voom
+- Preferred for:
+  - Larger sample sizes (>10 per group)
+  - Complex experimental designs
+  - When leveraging limma's mature linear modeling framework
+
+## Code Example Comparison
+
+```r
+# DESeq2
+dds <- DESeqDataSetFromMatrix(countData, colData, design = ~condition)
+dds <- DESeq(dds)
+res <- results(dds)
+
+# edgeR
+y <- DGEList(counts)
+y <- calcNormFactors(y)
+y <- estimateDisp(y)
+et <- exactTest(y)
+
+# limma/voom
+v <- voom(counts, design)
+fit <- lmFit(v, design)
+fit <- eBayes(fit)
+topTable(fit)
+```
+
+## Practical Considerations
+
+1. **Sample Size**:
+   - <5 samples/group: DESeq2 or edgeR
+   - >10 samples/group: limma/voom often performs well
+
+2. **Computational Resources**:
+   - DESeq2 is generally more memory intensive
+   - limma/voom can be faster for large datasets
+
+3. **Complex Designs**:
+   - All support complex designs, but edgeR and limma offer particularly flexible GLM frameworks
+```
+
+*Comparision of Enformer with Borzoi:
+**Both Enformer and Borzoi take DNA sequences as input but are designed for distinct biological scenarios and tasks. Here’s a breakdown of their input designs and **key limitations**:
+
+---
+
+### **1. DNA Input Scenarios**
+| Model       | Input DNA Sequence Length | Key Scenario/Purpose                                                                 |
+|-------------|---------------------------|-------------------------------------------------------------------------------------|
+| **Enformer**| ~200 kb (196,608 bp)      | Predicts *chromatin states* (e.g., TF binding, accessibility) and *gene expression*. |
+| **Borzoi**  | ~524 kb (524,288 bp)      | Predicts *RNA-seq coverage* (transcription, splicing, polyadenylation) at base-pair resolution. |
+
+---
+
+### **2. Limitations of Each Model**
+#### **Enformer**
+1. **Resolution Constraints**:
+   - Outputs predictions at **128 bp resolution**, limiting fine-grained analysis (e.g., precise exon-intron boundaries or splicing events).
+2. **RNA Complexity Blindness**:
+   - Cannot model RNA-level processes like splicing, polyadenylation, or isoform diversity.
+3. **Non-Coding Variant Interpretation**:
+   - Struggles to predict effects of variants far from promoters or in unannotated regulatory regions.
+4. **Fixed Input Size**:
+   - Requires sequences of **exactly 196 kb**, necessitating padding/trimming for shorter/longer regions.
+5. **Data Bias**:
+   - Trained primarily on bulk ENCODE/FANTOM5 data, limiting accuracy in rare cell types or tissues.
+
+#### **Borzoi**
+1. **Computational Cost**:
+   - Training from scratch requires **terabytes of data** and weeks on GPU clusters (mitigated partially by Flashzoi).
+2. **Splicing Limitations**:
+   - Struggles with unannotated splice junctions or non-canonical splicing signals.
+3. **Input Context Dependency**:
+   - Predictions depend on the full 524 kb input window; truncating sequences may miss distal regulatory elements.
+4. **Overfitting Risks**:
+   - High model capacity may lead to overfitting on small custom datasets during fine-tuning.
+5. **Tissue-Specific Gaps**:
+   - Performance varies in tissues with sparse training data (e.g., brain subtypes, rare cancers).
+
+---
+
+### **3. Shared Limitations**
+- **Sequence-Centric Focus**:
+  Both models ignore 3D chromatin structure, RNA-protein interactions, or epigenetic modifications (e.g., methylation).
+- **Static Predictions**:
+  Predictions reflect population-level averages, not dynamic cell-state transitions (e.g., differentiation or stress responses).
+- **Non-Human Applications**:
+  Limited generalizability to non-model organisms without retraining.
+
+---
+
+### **4. When to Use Which Model?**
+| Use Case                                  | Preferred Model | Reason                                                                 |
+|-------------------------------------------|-----------------|-----------------------------------------------------------------------|
+| Enhancer-promoter interactions           | Enformer        | Optimized for long-range chromatin interactions and TF binding.       |
+| Splicing or isoform-level predictions    | Borzoi          | Higher resolution (32 bp) and RNA-seq coverage modeling.              |
+| Variant effect scoring in non-coding DNA | Enformer        | Better for linking variants to chromatin states and gene expression. |
+| Tissue-specific RNA expression profiling | Borzoi          | Integrates RNA-seq data across tissues with cell-type specificity.    |
+
+---
+
+While both models use DNA sequences as input, their limitations stem from **architectural constraints** (resolution, input size) and **training data biases**. Choose Enformer for chromatin/gene regulation tasks and Borzoi for RNA-level predictions, but validate results with orthogonal assays (e.g., CRISPR screens) to address model-specific blind spots.
 
 
